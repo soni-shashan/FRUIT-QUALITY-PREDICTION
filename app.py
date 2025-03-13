@@ -18,12 +18,10 @@ CLASSES = [
 # Custom CSS for a polished look
 st.markdown("""
     <style>
-    /* Overall page styling */
     .reportview-container {
         background: #F5F5F5;
         color: #333;
     }
-    /* Title styling */
     .title {
         font-size: 38px; 
         color: #1b5e20; 
@@ -31,7 +29,6 @@ st.markdown("""
         font-weight: bold; 
         margin-top: 15px;
     }
-    /* Subtitle styling */
     .subtitle {
         font-size: 22px; 
         color: #2e7d32;
@@ -39,7 +36,6 @@ st.markdown("""
         margin-bottom: 20px;
         font-style: italic;
     }
-    /* Info box styling */
     .info-box {
         background-color: #E8F5E9; 
         padding: 10px; 
@@ -47,7 +43,6 @@ st.markdown("""
         margin-bottom: 20px;
         border-left: 5px solid #4CAF50;
     }
-    /* Button styling */
     .stButton>button {
         background-color: #5CB85C; 
         color: white; 
@@ -57,12 +52,10 @@ st.markdown("""
     .stButton>button:hover {
         background-color: #45A049;
     }
-    /* Radio styling */
     .stRadio [role='radiogroup']>label>div {
         font-weight: 600;
         color: #388E3C;
     }
-    /* Confidence bar styling */
     .confidence-bar {
         width: 100%; 
         background-color: #ccc; 
@@ -75,7 +68,6 @@ st.markdown("""
         background-color: #66BB6A; 
         border-radius: 4px;
     }
-    /* Centering elements */
     .centered-text {
         text-align: center;
     }
@@ -139,19 +131,27 @@ def real_time_detection_in_browser(interpreter, image_size):
     running inference on each frame without spawning a new OpenCV window.
     """
     if "run_webcam" not in st.session_state:
-        st.session_state["run_webcam"] = True
+        st.session_state["run_webcam"] = False  # Default to off until started
 
     frame_window = st.empty()
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        st.error("🚫 Error: Could not access webcam!")
+    
+    # Try different webcam indices (0, 1, 2) to find an available device
+    cap = None
+    for index in [0, 1, 2]:
+        cap = cv2.VideoCapture(index)
+        if cap.isOpened():
+            st.success(f"✅ Webcam found at index {index}")
+            break
+    if not cap or not cap.isOpened():
+        st.error("🚫 Error: No webcam available or accessible. Check connections and permissions.")
         st.session_state["run_webcam"] = False
         return
 
     while st.session_state["run_webcam"]:
         ret, frame = cap.read()
         if not ret:
-            st.error("⚠️ Failed to grab frame!")
+            st.error("⚠️ Failed to grab frame! Stopping detection.")
+            st.session_state["run_webcam"] = False
             break
 
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -172,9 +172,10 @@ def real_time_detection_in_browser(interpreter, image_size):
             cv2.LINE_AA
         )
         
-        frame_window.image(annotated_frame, channels="BGR")
+        frame_window.image(annotated_frame, channels="BGR", use_container_width=True)
 
     cap.release()
+    st.info("📷 Webcam released.")
 
 def main():
     if "camera_error" not in st.session_state:
@@ -190,7 +191,7 @@ def main():
     # **Load model once**
     interpreter, image_size = load_model()
 
-    # **Sidebar or main-radio options** (here we keep it in main page)
+    # **Radio options**
     option = st.radio("", ["Upload Image", "Single Snapshot", "Real-Time Detection"])
 
     # **Option 1: Upload Image**
@@ -227,8 +228,8 @@ def main():
     else:
         st.subheader("Real-Time Detection")
         st.markdown(
-            '<div class="info-box">Click "Start Live Detection" to begin streaming your webcam feed directly into this app.<br>'
-            'Click "Stop Live Detection" to stop.</div>',
+            '<div class="info-box">Click "Start Live Detection" to begin streaming your webcam feed.<br>'
+            'Click "Stop Live Detection" to stop. Requires a local webcam.</div>',
             unsafe_allow_html=True
         )
 
