@@ -5,7 +5,7 @@ from PIL import Image
 from PIL.Image import Resampling
 import cv2
 
-# Define fruit classes
+# DEFINE LABLE OF FRUIT CLASSES 
 CLASSES = [
     "Bad Apple", "Good Apple", "Mixed Apple",
     "Bad Banana", "Good Banana", "Mixed Banana",
